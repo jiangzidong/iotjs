@@ -10,3 +10,6 @@
 [submodule "deps/libtuv"]
 	path = deps/libtuv
 	url = https://github.com/Samsung/libtuv.git
+[submodule "deps/mraa"]
+	path = deps/mraa
+	url = https://github.com/intel-iot-devkit/mraa.git

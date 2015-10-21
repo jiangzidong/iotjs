@@ -59,6 +59,9 @@ LIBUV_ROOT = join_path([DEPS_ROOT, 'libuv'])
 # Root directory for libtuv submodule.
 LIBTUV_ROOT = join_path([DEPS_ROOT, 'libtuv'])
 
+# Root directory for mraa submodule.
+MRAA_ROOT = join_path([DEPS_ROOT, 'mraa'])
+
 # Root directory for http-parser submodule.
 HTTPPARSER_ROOT = join_path([DEPS_ROOT, 'http-parser'])
 
@@ -73,6 +76,9 @@ LIBTUV_BUILD_SUFFIX = 'deps/libtuv'
 
 # Build direcrtory suffix for http-parser build.
 HTTPPARSER_BUILD_SUFFIX = 'deps/http-parser'
+
+# Build direcrtory suffix for mraa build.
+MRAA_BUILD_SUFFIX = 'deps/mraa'
 
 # Root directory for the source files.
 SRC_ROOT = join_path([ROOT, 'src'])
@@ -152,6 +158,7 @@ options = {
     'checktest': True,
     'jerry-heaplimit': 81,
     'tuv' : False,
+    "mraa" : False,
 }
 
 boolean_opts = ['buildlib',
@@ -159,7 +166,8 @@ boolean_opts = ['buildlib',
                 'tidy',
                 'jerry-memstats',
                 'checktest',
-                'tuv']
+                'tuv',
+                "mraa"]
 
 def opt_build_type():
     return options['buildtype']
@@ -217,6 +225,9 @@ def opt_jerry_heaplimit() :
 
 def opt_tuv():
     return options['tuv']
+
+def opt_mraa():
+    return options['mraa']
 
 
 def parse_boolean_opt(name, arg):
@@ -286,6 +297,9 @@ def libtuv_output_path():
 
 def libhttpparser_output_path():
     return join_path([opt_build_libs(), "libhttpparser.a"])
+
+def libmraa_output_path():
+    return join_path([opt_build_libs(), "libmraa.so"])
 
 def build_libuv():
     # check libuv submodule directory.
@@ -615,6 +629,71 @@ def build_libhttpparser():
     return True
 
 
+def build_libmraa():
+    # check mraa submodule directory.
+    if not check_path(MRAA_ROOT):
+        print '* mraa build failed - submodule not exists.'
+        return False
+
+    # get hash.
+    git_hash = get_git_hash(MRAA_ROOT)
+
+    # build directory.
+    build_home = join_path([opt_build_root(), MRAA_BUILD_SUFFIX])
+
+    # cached library.
+    build_cache_dir = join_path([build_home, 'cache'])
+    build_cache_path = get_cache_path(build_cache_dir, 'libmraa',
+                                      git_hash)
+
+    mraa_cmake_opt = [MRAA_ROOT]
+
+    if opt_target_arch() == 'arm':
+        mraa_cmake_opt.append("-DBUILDARCH=arm")
+    elif opt_target_arch() == 'i686':
+        mraa_cmake_opt.append("-DCMAKE_CXX_FLAGS=-m32")
+        mraa_cmake_opt.append("-DCMAKE_C_FLAGS=-m32")
+
+    # check if cache is available.
+    if not check_cached(build_cache_path):
+
+        # make build directory.
+        mkdir(build_home)
+
+        # change current directory to libuv.
+        #os.chdir(MRAA_ROOT)
+        os.chdir(build_home)
+
+        # set build type.
+        build_type = 'Release' if opt_build_type() == 'release' else 'Debug'
+
+        mraa_cmake_opt.append('-DBUILDTYPE=' + build_type)
+
+        # cmake
+        check_run_cmd('cmake', mraa_cmake_opt)
+        check_run_cmd('cmake', mraa_cmake_opt)
+
+        check_run_cmd('make')
+
+        output = join_path([build_home,
+                            'src/'
+                            'libmraa.so'])
+
+        # check if target is created.
+        if not check_path(output):
+            print '* libmraa build failed - target not produced.'
+            return False
+
+        # copy output to cache
+        mkdir(build_cache_dir)
+        copy(output, build_cache_path)
+
+    # copy cache to libs directory
+    mkdir(opt_build_libs())
+    copy(build_cache_path, libmraa_output_path())
+
+    return True
+
 
 def build_iotjs():
     os.chdir(SCRIPT_PATH)
@@ -659,6 +738,9 @@ def build_iotjs():
 
     if opt_target_board():
         iotjs_cmake_opt.append('-DTARGET_BOARD=' + opt_target_board())
+
+    if opt_mraa():
+        iotjs_cmake_opt.append('-DWITH_MRAA=' + opt_target_board())
 
     if opt_cmake_option():
         iotjs_cmake_opt.append(opt_cmake_option())
@@ -721,6 +803,12 @@ if not build_libjerry():
 # build lib.
 if not build_libhttpparser():
     sys.exit(1)
+
+# build libmraa.
+if opt_mraa():
+    if not build_libmraa():
+        print_error("Failed build_libmraa")
+        sys.exit(1)
 
 # build iot.js
 if not build_iotjs():

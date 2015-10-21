@@ -14,24 +14,11 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project(IOTJS)
+set(MRAA_ROOT ${DEP_ROOT}/mraa)
+set(MRAA_INCDIR ${MRAA_ROOT}/api)
+set(MRAA_LIB ${LIB_ROOT}/libmraa.so)
 
-set(IOTJS_VERSION_MAJOR 0)
-set(IOTJS_VERSION_MINOR 1)
+add_custom_command(OUTPUT ${MRAA_LIB}
+                   COMMAND touch ${MRAA_LIB})
 
-include(cmake/config.cmake)
-if(DEFINED WITH_TUV)
-  include(cmake/libtuv.cmake)
-else()
-  include(cmake/libuv.cmake)
-endif()
-include(cmake/jerry.cmake)
-include(cmake/http-parser.cmake)
-if(DEFINED WITH_MRAA)
-  include(cmake/mraa.cmake)
-endif()
-if(DEFINED WITH_TUV)
-  include(cmake/iotjstuv.cmake)
-else()
-  include(cmake/iotjs.cmake)
-endif()
+add_custom_target(targetMraa DEPENDS ${MRAA_LIB})
