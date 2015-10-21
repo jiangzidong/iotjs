@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#define USING_MRAA
 #if defined(__LINUX__)
 
  #if defined(USING_MRAA)
