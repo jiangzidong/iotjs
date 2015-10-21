@@ -23,7 +23,8 @@ set(LIB_IOTJS_INCDIR ${TARGET_INC}
                      ${SRC_ROOT}
                      ${JERRY_INCDIR}
                      ${LIBUV_INCDIR}
-                     ${HTTPPARSER_INCDIR})
+                     ${HTTPPARSER_INCDIR}
+                     /home/jzd/mraa/api)
 
 
 add_custom_target(targetLibIoTjs)
@@ -56,7 +57,7 @@ function(BuildIoTjs)
   target_include_directories(${targetName} PRIVATE ${LIB_IOTJS_INCDIR})
   target_include_directories(${targetName} SYSTEM PRIVATE ${TARGET_INC})
   target_link_libraries(${targetName} libiotjs ${JERRY_LIB}
-    ${LIBUV_LIB} ${HTTPPARSER_LIB})
+    ${LIBUV_LIB} ${HTTPPARSER_LIB} /home/jzd/mraa/build/src/libmraa.so)
   add_dependencies(targetLibIoTjs ${targetName})
 
 endfunction()
